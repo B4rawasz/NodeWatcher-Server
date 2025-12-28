@@ -4,7 +4,7 @@
 #include <string>
 
 int main(int argc, char** argv) {
-    Server server;
+    Server<uWS::App> server;
     server.run();
 
     while (true) {

@@ -1,13 +1,17 @@
 #ifndef server_h
 #define server_h
-#include <App.h>
 #include <condition_variable>
 #include <queue>
+#include "App.h"
 
+template <typename T>
+concept TApp = std::is_same_v<T, uWS::App> || std::is_same_v<T, uWS::SSLApp>;
+
+template <TApp AppType>
 class Server {
 public:
     Server();
-    Server(const char* certFile, const char* keyFile);
+    Server(uWS::SocketContextOptions sslOptions);
 
     ~Server();
 
@@ -20,7 +24,7 @@ private:
     void flushQueue();
 
     std::thread* wsThread_ = nullptr;
-    uWS::App* app_ = nullptr;
+    AppType* app_ = nullptr;
     std::atomic<uWS::Loop*> loop_{nullptr};
     std::mutex loopMutex_;
     std::condition_variable loopCv_;
@@ -29,7 +33,10 @@ private:
     std::queue<std::string> sendQueue_;
     std::atomic_bool deferScheduled_{false};
 
-    std::atomic<bool> running{false};
+    std::atomic<bool> running_{false};
+    uWS::SocketContextOptions sslOptions_;
 };
+
+#include <server.tpp>
 
 #endif  // server_h

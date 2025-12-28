@@ -1,26 +1,33 @@
+#pragma once
 #include <server.h>
 #include <thread>
-
 #include "App.h"
 
-Server::Server() {}
-Server::Server(const char*, const char*) {}
-Server::~Server() {
+template <TApp AppType>
+Server<AppType>::Server() {}
+
+template <TApp AppType>
+Server<AppType>::Server(uWS::SocketContextOptions sslOptions) : sslOptions_(sslOptions) {}
+
+template <TApp AppType>
+Server<AppType>::~Server() {
     stop();
 }
 
-void Server::run() {
+template <TApp AppType>
+void Server<AppType>::run() {
     wsThread_ = new std::thread(&Server::start, this);
 
     std::unique_lock lk(loopMutex_);
 
     loopCv_.wait(lk, [&] { return loop_ != nullptr; });
 
-    running = true;
+    running_.store(true);
 }
 
-void Server::stop() {
-    if (!running)
+template <TApp AppType>
+void Server<AppType>::stop() {
+    if (!running_.load())
         return;
 
     auto* loop = loop_.load();
@@ -35,10 +42,11 @@ void Server::stop() {
 
     delete wsThread_;
     wsThread_ = nullptr;
-    running = false;
+    running_.store(false);
 }
 
-void Server::broadcast(std::string msg) {
+template <TApp AppType>
+void Server<AppType>::broadcast(std::string msg) {
     {
         std::lock_guard lk(queueMutex_);
         sendQueue_.push(std::move(msg));
@@ -57,11 +65,13 @@ void Server::broadcast(std::string msg) {
     }
 }
 
-void Server::start() {
+template <TApp AppType>
+void Server<AppType>::start() {
     struct PerSocketData {};
 
-    app_ = new uWS::App();
-    app_->ws<PerSocketData>(
+    app_ = new AppType(sslOptions_);
+
+    app_->template ws<PerSocketData>(
             "/*", {.compression = uWS::DISABLED,
                    .maxPayloadLength = 16 * 1024 * 1024,
                    .idleTimeout = 60,
@@ -105,7 +115,8 @@ void Server::start() {
     uWS::Loop::get()->free();
 }
 
-void Server::flushQueue() {
+template <TApp AppType>
+void Server<AppType>::flushQueue() {
     if (uWS::Loop::get() != loop_.load()) {
         std::abort();
     }

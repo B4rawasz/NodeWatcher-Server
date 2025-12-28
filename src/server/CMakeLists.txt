@@ -1,9 +1,7 @@
-add_library(server STATIC
-    server.cpp
-)
+add_library(server INTERFACE)
 
-target_include_directories(server PUBLIC
+target_include_directories(server INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(server PUBLIC uWebSockets)
+target_link_libraries(server INTERFACE uWebSockets)
