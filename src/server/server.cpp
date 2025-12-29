@@ -1,21 +1,17 @@
-#pragma once
 #include <server.h>
 #include <thread>
 #include "App.h"
 
-template <TApp AppType>
-Server<AppType>::Server() {}
+Server::Server(uWS::SocketContextOptions sslOptions) : sslOptions_(sslOptions) {}
 
-template <TApp AppType>
-Server<AppType>::Server(uWS::SocketContextOptions sslOptions) : sslOptions_(sslOptions) {}
-
-template <TApp AppType>
-Server<AppType>::~Server() {
+Server::~Server() {
     stop();
 }
 
-template <TApp AppType>
-void Server<AppType>::run() {
+void Server::run() {
+    if (running_.load())
+        return;
+
     wsThread_ = new std::thread(&Server::start, this);
 
     std::unique_lock lk(loopMutex_);
@@ -25,8 +21,7 @@ void Server<AppType>::run() {
     running_.store(true);
 }
 
-template <TApp AppType>
-void Server<AppType>::stop() {
+void Server::stop() {
     if (!running_.load())
         return;
 
@@ -45,8 +40,7 @@ void Server<AppType>::stop() {
     running_.store(false);
 }
 
-template <TApp AppType>
-void Server<AppType>::broadcast(std::string msg) {
+void Server::broadcast(std::string msg) {
     {
         std::lock_guard lk(queueMutex_);
         sendQueue_.push(std::move(msg));
@@ -65,16 +59,15 @@ void Server<AppType>::broadcast(std::string msg) {
     }
 }
 
-template <TApp AppType>
-void Server<AppType>::start() {
+void Server::start() {
     struct PerSocketData {};
 
-    app_ = new AppType(sslOptions_);
+    app_ = new uWS::SSLApp(sslOptions_);
 
-    app_->template ws<PerSocketData>(
+    app_->ws<PerSocketData>(
             "/*", {.compression = uWS::DISABLED,
                    .maxPayloadLength = 16 * 1024 * 1024,
-                   .idleTimeout = 60,
+                   .idleTimeout = 0,
                    .maxBackpressure = 16 * 1024 * 1024,
                    .closeOnBackpressureLimit = false,
                    .resetIdleTimeoutOnSend = true,
@@ -115,8 +108,7 @@ void Server<AppType>::start() {
     uWS::Loop::get()->free();
 }
 
-template <TApp AppType>
-void Server<AppType>::flushQueue() {
+void Server::flushQueue() {
     if (uWS::Loop::get() != loop_.load()) {
         std::abort();
     }

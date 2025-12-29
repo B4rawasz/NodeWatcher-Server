@@ -4,13 +4,8 @@
 #include <queue>
 #include "App.h"
 
-template <typename T>
-concept TApp = std::is_same_v<T, uWS::App> || std::is_same_v<T, uWS::SSLApp>;
-
-template <TApp AppType>
 class Server {
 public:
-    Server();
     Server(uWS::SocketContextOptions sslOptions);
 
     ~Server();
@@ -24,7 +19,7 @@ private:
     void flushQueue();
 
     std::thread* wsThread_ = nullptr;
-    AppType* app_ = nullptr;
+    uWS::SSLApp* app_ = nullptr;
     std::atomic<uWS::Loop*> loop_{nullptr};
     std::mutex loopMutex_;
     std::condition_variable loopCv_;
@@ -34,9 +29,10 @@ private:
     std::atomic_bool deferScheduled_{false};
 
     std::atomic<bool> running_{false};
-    uWS::SocketContextOptions sslOptions_;
-};
 
-#include <server.tpp>
+    uWS::SocketContextOptions sslOptions_;
+    int port_ = 5055;
+    std::string host_ = "";
+};
 
 #endif  // server_h

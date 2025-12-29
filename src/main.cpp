@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
         .cert_file_name = "../../test/ssl/certs/server.crt",
     };
 
-    Server<uWS::SSLApp> server(sslOptions);
+    Server server(sslOptions);
     server.run();
 
     while (true) {
