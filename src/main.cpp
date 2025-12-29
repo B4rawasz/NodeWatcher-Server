@@ -4,7 +4,12 @@
 #include <string>
 
 int main(int argc, char** argv) {
-    Server<uWS::App> server;
+    uWS::SocketContextOptions sslOptions = {
+        .key_file_name = "../../test/ssl/certs/server.key",
+        .cert_file_name = "../../test/ssl/certs/server.crt",
+    };
+
+    Server<uWS::SSLApp> server(sslOptions);
     server.run();
 
     while (true) {
