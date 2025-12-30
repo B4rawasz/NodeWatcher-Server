@@ -141,8 +141,22 @@ void Server::onMessage(uWS::WebSocket<true, true, PerSocketData>* ws,
     PerSocketData* psd = ws->getUserData();
 
     if (!psd->authenticated) {
+        if (psd->nonceTs + std::chrono::seconds(5) < std::chrono::steady_clock::now()) {
+            sendJson(ws, message::Error{402, "Authentication nonce expired"});
+            ws->close();
+            return;
+        }
+
+        if (message::getMessageType(message) != message::Type::AUTH_RESPONSE) {
+            sendJson(ws, message::Error{401, "Authentication required"});
+            return;
+        }
+
+        dispatch(ws, message::parseMessage(message).value());
         return;
     }
+
+    ws->send(message, opCode);
 }
 
 void Server::onClose(uWS::WebSocket<true, true, PerSocketData>* ws,
@@ -155,14 +169,8 @@ void Server::onClose(uWS::WebSocket<true, true, PerSocketData>* ws,
                message);
 }
 
-void Server::authenticateClient(uWS::WebSocket<true, true, PerSocketData>* ws,
-                                std::string_view message,
-                                uWS::OpCode opCode) {
-    PerSocketData* psd = ws->getUserData();
-}
-
 void Server::dispatch(uWS::WebSocket<true, true, PerSocketData>* ws,
-                      const message::MessageVariant& msg) {
+                      const message::MessageVariantIN& msg) {
     std::visit([&](auto&& m) { handle(ws, m); }, msg);
 }
 

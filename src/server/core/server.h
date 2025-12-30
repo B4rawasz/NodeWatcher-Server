@@ -35,12 +35,8 @@ private:
                  int code,
                  std::string_view message);
 
-    void authenticateClient(uWS::WebSocket<true, true, PerSocketData>* ws,
-                            std::string_view message,
-                            uWS::OpCode opCode);
-
     void dispatch(uWS::WebSocket<true, true, PerSocketData>* ws,
-                  const message::MessageVariant& msg);
+                  const message::MessageVariantIN& msg);
 
     void sendJson(uWS::WebSocket<true, true, PerSocketData>* ws,
                   const message::MessageVariant& msg);
@@ -48,13 +44,7 @@ private:
     void handle(uWS::WebSocket<true, true, PerSocketData>* ws, const message::Error& msg);
 
     void handle(uWS::WebSocket<true, true, PerSocketData>* ws,
-                const message::AuthChallenge& msg);
-
-    void handle(uWS::WebSocket<true, true, PerSocketData>* ws,
                 const message::AuthResponse& msg);
-
-    void handle(uWS::WebSocket<true, true, PerSocketData>* ws,
-                const message::AuthResult& msg);
 
     std::thread* wsThread_ = nullptr;
     uWS::SSLApp* app_ = nullptr;

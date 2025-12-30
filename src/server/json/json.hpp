@@ -61,26 +61,22 @@ namespace message {
     };
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(AuthResult, type, success, reason);
 
+    using MessageVariantIN = std::variant<Error, AuthResponse>;
+    using MessageVariantOUT = std::variant<Error, AuthChallenge, AuthResult>;
+
     using MessageVariant = std::variant<Error, AuthChallenge, AuthResponse, AuthResult>;
 
-    using ParserFn = message::MessageVariant (*)(const nlohmann::json&);
+    using ParserFn = message::MessageVariantIN (*)(const nlohmann::json&);
 
     inline const std::unordered_map<message::Type, ParserFn> parsers = {
-        {message::Type::AUTH_CHALLENGE,
-         [](const nlohmann::json& j) -> MessageVariant {
-             return j.get<message::AuthChallenge>();
-         }},
         {message::Type::AUTH_RESPONSE,
-         [](const nlohmann::json& j) -> MessageVariant {
+         [](const nlohmann::json& j) -> MessageVariantIN {
              return j.get<message::AuthResponse>();
-         }},
-        {message::Type::AUTH_RESULT,
-         [](const nlohmann::json& j) -> MessageVariant {
-             return j.get<message::AuthResult>();
          }},
     };
 
-    inline std::optional<message::MessageVariant> parseMessage(std::string_view payload) {
+    inline std::optional<message::MessageVariantIN> parseMessage(
+        std::string_view payload) {
         try {
             auto j = nlohmann::json::parse(payload);
 
@@ -92,12 +88,22 @@ namespace message {
 
             return it->second(j);
         } catch (const nlohmann::json::exception& e) {
-            return message::Error{400, e.what()};
+            return message::Error{e.id, e.what()};
         }
     }
 
     inline std::string serializeMessage(const message::MessageVariant& msg) {
         return std::visit([](const auto& m) { return nlohmann::json(m).dump(); }, msg);
+    }
+
+    inline message::Type getMessageType(const std::string_view payload) {
+        try {
+            auto j = nlohmann::json::parse(payload);
+            message::Message base = j.get<message::Message>();
+            return base.type;
+        } catch (const nlohmann::json::exception& e) {
+            return message::Type::UNKNOWN;
+        }
     }
 }  // namespace message
 
