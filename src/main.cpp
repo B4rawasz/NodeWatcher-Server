@@ -1,5 +1,6 @@
 #include <App.h>
 #include <server.h>
+#include <json.hpp>
 #include <print>
 #include <string>
 
@@ -10,7 +11,7 @@ int main(int argc, char** argv) {
     };
 
     Server server(sslOptions);
-    server.run();
+    server.run(9001);
 
     while (true) {
         std::println("Input message to broadcast (or 'exit' to quit):");

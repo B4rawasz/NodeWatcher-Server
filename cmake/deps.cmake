@@ -70,3 +70,14 @@ target_link_libraries(uWebSockets INTERFACE
 target_compile_options(uWebSockets INTERFACE
     -Wno-deprecated-declarations
 )
+
+# =====================
+# nlohmann_json
+# =====================
+FetchContent_Declare(
+    nlohmann_json_content
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.11.3
+)
+
+FetchContent_MakeAvailable(nlohmann_json_content)
