@@ -4,6 +4,7 @@
 #include <uuid/uuid.h>
 #include <condition_variable>
 #include <queue>
+#include <unordered_map>
 #include "json.hpp"
 
 struct PerSocketData {
@@ -39,7 +40,10 @@ private:
                   const message::MessageVariantIN& msg);
 
     void sendJson(uWS::WebSocket<true, true, PerSocketData>* ws,
-                  const message::MessageVariant& msg);
+                  const message::MessageVariantOUT& msg);
+
+    void sendFatalFailure(uWS::WebSocket<true, true, PerSocketData>* ws,
+                          const message::MessageVariantOUT& error);
 
     void handle(uWS::WebSocket<true, true, PerSocketData>* ws, const message::Error& msg);
 
@@ -61,6 +65,8 @@ private:
     uWS::SocketContextOptions sslOptions_;
     int port_ = 5055;
     std::string host_ = "";
+
+    std::unordered_map<std::string, apiKeys::ApiKey> apiKeys_;
 };
 
 #endif  // server_h

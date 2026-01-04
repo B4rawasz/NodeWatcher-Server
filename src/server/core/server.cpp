@@ -143,7 +143,7 @@ void Server::onMessage(uWS::WebSocket<true, true, PerSocketData>* ws,
     if (!psd->authenticated) {
         if (psd->nonceTs + std::chrono::seconds(5) < std::chrono::steady_clock::now()) {
             sendJson(ws, message::Error{402, "Authentication nonce expired"});
-            ws->close();
+            uWS::Loop::get()->defer([ws]() { ws->close(); });
             return;
         }
 
@@ -175,6 +175,13 @@ void Server::dispatch(uWS::WebSocket<true, true, PerSocketData>* ws,
 }
 
 void Server::sendJson(uWS::WebSocket<true, true, PerSocketData>* ws,
-                      const message::MessageVariant& msg) {
+                      const message::MessageVariantOUT& msg) {
+    std::string t = message::serializeMessage(msg);
     ws->send(message::serializeMessage(msg), uWS::OpCode::TEXT);
+}
+
+void Server::sendFatalFailure(uWS::WebSocket<true, true, PerSocketData>* ws,
+                              const message::MessageVariantOUT& error) {
+    sendJson(ws, error);
+    uWS::Loop::get()->defer([ws]() { ws->close(); });
 }

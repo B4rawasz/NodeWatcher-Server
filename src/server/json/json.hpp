@@ -4,6 +4,14 @@
 #include <nlohmann/json.hpp>
 #include <variant>
 
+namespace apiKeys {
+    struct ApiKey {
+        std::string key;
+        std::string owner;
+    };
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ApiKey, key, owner);
+}  // namespace apiKeys
+
 namespace message {
     enum class Type {
         UNKNOWN = -1,
@@ -92,7 +100,7 @@ namespace message {
         }
     }
 
-    inline std::string serializeMessage(const message::MessageVariant& msg) {
+    inline std::string serializeMessage(const message::MessageVariantOUT& msg) {
         return std::visit([](const auto& m) { return nlohmann::json(m).dump(); }, msg);
     }
 
