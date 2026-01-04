@@ -1,28 +1,51 @@
-#include <App.h>
-#include <server.h>
-#include <json.hpp>
+#include <daemon.h>
+#include <help.h>
+#include <keygen.h>
+#include <csignal>
 #include <print>
 #include <string>
 
 int main(int argc, char** argv) {
-    uWS::SocketContextOptions sslOptions = {
-        .key_file_name = "../../test/ssl/certs/server.key",
-        .cert_file_name = "../../test/ssl/certs/server.crt",
-    };
+    // Setup signal handlers
+    std::signal(SIGINT, signalHandler);
+    std::signal(SIGTERM, signalHandler);
+    std::signal(SIGUSR1, signalHandler);
 
-    Server server(sslOptions);
-    server.run(9001);
+    std::string env = "production";
 
-    while (true) {
-        std::println("Input message to broadcast (or 'exit' to quit):");
-        std::string input;
-        std::getline(std::cin, input);
-        if (input == "exit") {
-            break;
-        }
-        server.broadcast(input);
+    const char* value = std::getenv("NODEWATCHER_ENV");
+    if (value != nullptr) {
+        env = std::string(value);
     }
 
-    server.stop();
+    // Auto-daemonize if run by systemd or in development environment
+    if (std::getenv("INVOCATION_ID") != nullptr || (env == "development" && argc == 1)) {
+        daemon();
+        return 0;
+    }
+
+    std::string argvStr[argc];
+    for (int i = 0; i < argc; ++i) {
+        argvStr[i] = argv[i];
+    }
+
+    if (argc < 2) {
+        help();
+        return 1;
+    }
+
+    std::string command = argvStr[1];
+
+    if (command == "--keygen") {
+        keygen();
+    } else if (command == "--help") {
+        help();
+    } else if (command == "--version") {
+        std::println("NodeWatcher Server - Version 1.0.0");
+    } else {
+        help();
+        return 1;
+    }
+
     return 0;
 }

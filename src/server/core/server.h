@@ -1,10 +1,10 @@
 #ifndef server_h
 #define server_h
 #include <App.h>
+#include <api_keys.h>
 #include <uuid/uuid.h>
 #include <condition_variable>
 #include <queue>
-#include <unordered_map>
 #include "json.hpp"
 
 struct PerSocketData {
@@ -16,7 +16,7 @@ struct PerSocketData {
 
 class Server {
 public:
-    Server(uWS::SocketContextOptions sslOptions);
+    Server(uWS::SocketContextOptions sslOptions, KeyStore& keystore);
 
     ~Server();
 
@@ -66,7 +66,7 @@ private:
     int port_ = 5055;
     std::string host_ = "";
 
-    std::unordered_map<std::string, apiKeys::ApiKey> apiKeys_;
+    KeyStore& keystore_;
 };
 
 #endif  // server_h

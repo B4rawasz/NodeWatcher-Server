@@ -4,14 +4,6 @@
 #include <nlohmann/json.hpp>
 #include <variant>
 
-namespace apiKeys {
-    struct ApiKey {
-        std::string key;
-        std::string owner;
-    };
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ApiKey, key, owner);
-}  // namespace apiKeys
-
 namespace message {
     enum class Type {
         UNKNOWN = -1,

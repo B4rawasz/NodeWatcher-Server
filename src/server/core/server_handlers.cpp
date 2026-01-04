@@ -1,5 +1,4 @@
 #include <server.h>
-#include <print>
 #include "auth.h"
 #include "json.hpp"
 
@@ -26,15 +25,14 @@ void Server::handle(uWS::WebSocket<true, true, PerSocketData>* ws,
                : msg.hmac;
 
     // Lookup API key for the user
-    auto it = apiKeys_.find(user);
-
-    if (it == apiKeys_.end()) {
+    std::optional<ApiKey> apiKeyOptional = keystore_.getKey(user);
+    if (!apiKeyOptional.has_value()) {
         // User not found
         sendFatalFailure(ws, message::AuthResult{false, "Invalid API key"});
         return;
     }
 
-    apiKeys::ApiKey apiKey = it->second;
+    ApiKey apiKey = apiKeyOptional.value();
 
     // Compute expected HMAC
     std::string expectedHmac = auth::hmacSha256(apiKey.key, psd->nonce);

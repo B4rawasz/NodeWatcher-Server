@@ -3,7 +3,8 @@
 #include "auth.h"
 #include "json.hpp"
 
-Server::Server(uWS::SocketContextOptions sslOptions) : sslOptions_(sslOptions) {}
+Server::Server(uWS::SocketContextOptions sslOptions, KeyStore& keystore)
+    : sslOptions_(sslOptions), keystore_(keystore) {}
 
 Server::~Server() {
     stop();
