@@ -1,4 +1,5 @@
 #include <cpu.h>
+#include <sys/utsname.h>
 #include <fstream>
 #include <json.hpp>
 
@@ -39,11 +40,27 @@ void CPUInfo::getCPUModel() {
 }
 
 void CPUInfo::getCPUArchitecture() {
-    // Implementation to retrieve CPU architecture
+    struct utsname u{};
+    if (uname(&u) == 0)
+        cpu_architecture_ = u.machine;  // np. x86_64, aarch64, armv7l
+    else
+        cpu_architecture_ = "unknown";
 }
 
 void CPUInfo::getCPUMaxFrequency() {
-    // Implementation to retrieve CPU max frequency
+    std::ifstream file("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
+    long freq_khz = 0;
+
+    if (!(file >> freq_khz) || freq_khz <= 0) {
+        cpu_max_frequency_ = "0.000";
+        return;
+    }
+
+    double freq_mhz = freq_khz / 1000.0;
+
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(3) << freq_mhz;
+    cpu_max_frequency_ = oss.str();
 }
 
 void CPUInfo::getCPUCores() {
