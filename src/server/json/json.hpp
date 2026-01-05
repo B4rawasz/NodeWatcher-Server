@@ -15,6 +15,7 @@ namespace message {
         AUTH_RESULT = 3,
         SYSTEM_INFO_STATIC = 4,
         SYSTEM_INFO = 5,
+        CPU_INFO_STATIC = 6,
     };
 
     NLOHMANN_JSON_SERIALIZE_ENUM(Type,
@@ -26,6 +27,7 @@ namespace message {
                                      {Type::AUTH_RESULT, "AUTH_RESULT"},
                                      {Type::SYSTEM_INFO_STATIC, "SYSTEM_INFO_STATIC"},
                                      {Type::SYSTEM_INFO, "SYSTEM_INFO"},
+                                     {Type::CPU_INFO_STATIC, "CPU_INFO_STATIC"},
                                  })
 
     struct Message {
@@ -102,21 +104,53 @@ namespace message {
             : Message(Type::SYSTEM_INFO), uptime(uptime), local_time(local_time) {}
     };
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(SystemInfo, type, uptime, local_time);
+
+    struct CpuInfoStatic : public Message {
+        std::string cpu_model;
+        std::string cpu_architecture;
+        std::string cpu_max_frequency;
+        int cpu_cores;
+        int cpu_threads;
+        CpuInfoStatic() = default;
+        CpuInfoStatic(const std::string& cpu_model,
+                      const std::string& cpu_architecture,
+                      const std::string& cpu_max_frequency,
+                      int cpu_cores,
+                      int cpu_threads)
+            : Message(Type::CPU_INFO_STATIC),
+              cpu_model(cpu_model),
+              cpu_architecture(cpu_architecture),
+              cpu_max_frequency(cpu_max_frequency),
+              cpu_cores(cpu_cores),
+              cpu_threads(cpu_threads) {}
+    };
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CpuInfoStatic,
+                                       type,
+                                       cpu_model,
+                                       cpu_architecture,
+                                       cpu_max_frequency,
+                                       cpu_cores,
+                                       cpu_threads);
 }  // namespace message
 
 // Utility functions for parsing and serializing messages
 namespace message {
 
     using MessageVariantIN = std::variant<Error, AuthResponse>;
-    using MessageVariantOUT =
-        std::variant<Error, AuthChallenge, AuthResult, SystemInfoStatic, SystemInfo>;
+    using MessageVariantOUT = std::variant<Error,
+                                           AuthChallenge,
+                                           AuthResult,
+                                           SystemInfoStatic,
+                                           SystemInfo,
+                                           CpuInfoStatic>;
 
     using MessageVariant = std::variant<Error,
                                         AuthChallenge,
                                         AuthResponse,
                                         AuthResult,
                                         SystemInfoStatic,
-                                        SystemInfo>;
+                                        SystemInfo,
+                                        CpuInfoStatic>;
 
     using ParserFn = message::MessageVariantIN (*)(const nlohmann::json&);
 
