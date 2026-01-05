@@ -4,6 +4,7 @@ add_library(nodewatcher_linux STATIC
     modules/light_module.cpp
     modules/scheduler/scheduler.cpp
     modules/system/system.cpp
+    modules/cpu/cpu.cpp
 )
 
 target_include_directories(nodewatcher_linux PUBLIC
@@ -11,9 +12,11 @@ target_include_directories(nodewatcher_linux PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/modules
     ${CMAKE_CURRENT_SOURCE_DIR}/modules/scheduler
     ${CMAKE_CURRENT_SOURCE_DIR}/modules/system
+    ${CMAKE_CURRENT_SOURCE_DIR}/modules/cpu
 )
 
 target_link_libraries(nodewatcher_linux PUBLIC
-    nodewatcher_server
+    nodewatcher_messages
+    nodewatcher_events
     nlohmann_json::nlohmann_json
 )

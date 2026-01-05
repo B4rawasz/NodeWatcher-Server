@@ -15,6 +15,8 @@ namespace message {
         AUTH_RESULT = 3,
         SYSTEM_INFO_STATIC = 4,
         SYSTEM_INFO = 5,
+        CPU_INFO_STATIC = 6,
+        CPU_INFO = 7,
     };
 
     NLOHMANN_JSON_SERIALIZE_ENUM(Type,
@@ -26,6 +28,8 @@ namespace message {
                                      {Type::AUTH_RESULT, "AUTH_RESULT"},
                                      {Type::SYSTEM_INFO_STATIC, "SYSTEM_INFO_STATIC"},
                                      {Type::SYSTEM_INFO, "SYSTEM_INFO"},
+                                     {Type::CPU_INFO_STATIC, "CPU_INFO_STATIC"},
+                                     {Type::CPU_INFO, "CPU_INFO"},
                                  })
 
     struct Message {
@@ -102,21 +106,86 @@ namespace message {
             : Message(Type::SYSTEM_INFO), uptime(uptime), local_time(local_time) {}
     };
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(SystemInfo, type, uptime, local_time);
+
+    struct CpuInfoStatic : public Message {
+        std::string cpu_model;
+        std::string cpu_architecture;
+        int cpu_max_frequency;
+        int cpu_cores;
+        int cpu_threads;
+        CpuInfoStatic() = default;
+        CpuInfoStatic(const std::string& cpu_model,
+                      const std::string& cpu_architecture,
+                      int cpu_max_frequency,
+                      int cpu_cores,
+                      int cpu_threads)
+            : Message(Type::CPU_INFO_STATIC),
+              cpu_model(cpu_model),
+              cpu_architecture(cpu_architecture),
+              cpu_max_frequency(cpu_max_frequency),
+              cpu_cores(cpu_cores),
+              cpu_threads(cpu_threads) {}
+    };
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CpuInfoStatic,
+                                       type,
+                                       cpu_model,
+                                       cpu_architecture,
+                                       cpu_max_frequency,
+                                       cpu_cores,
+                                       cpu_threads);
+
+    struct CpuInfo : public Message {
+        double cpu_load_avg_1min;
+        double cpu_load_avg_5min;
+        double cpu_load_avg_15min;
+        double cpu_usage;
+        std::vector<double> per_core_usage;
+        int cpu_frequency;
+        CpuInfo() = default;
+        CpuInfo(double cpu_load_avg_1min,
+                double cpu_load_avg_5min,
+                double cpu_load_avg_15min,
+                double cpu_usage,
+                const std::vector<double>& per_core_usage,
+                int cpu_frequency)
+            : Message(Type::CPU_INFO),
+              cpu_load_avg_1min(cpu_load_avg_1min),
+              cpu_load_avg_5min(cpu_load_avg_5min),
+              cpu_load_avg_15min(cpu_load_avg_15min),
+              cpu_usage(cpu_usage),
+              per_core_usage(per_core_usage),
+              cpu_frequency(cpu_frequency) {}
+    };
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CpuInfo,
+                                       type,
+                                       cpu_load_avg_1min,
+                                       cpu_load_avg_5min,
+                                       cpu_load_avg_15min,
+                                       cpu_usage,
+                                       per_core_usage,
+                                       cpu_frequency);
 }  // namespace message
 
 // Utility functions for parsing and serializing messages
 namespace message {
 
     using MessageVariantIN = std::variant<Error, AuthResponse>;
-    using MessageVariantOUT =
-        std::variant<Error, AuthChallenge, AuthResult, SystemInfoStatic, SystemInfo>;
+    using MessageVariantOUT = std::variant<Error,
+                                           AuthChallenge,
+                                           AuthResult,
+                                           SystemInfoStatic,
+                                           SystemInfo,
+                                           CpuInfoStatic,
+                                           CpuInfo>;
 
     using MessageVariant = std::variant<Error,
                                         AuthChallenge,
                                         AuthResponse,
                                         AuthResult,
                                         SystemInfoStatic,
-                                        SystemInfo>;
+                                        SystemInfo,
+                                        CpuInfoStatic,
+                                        CpuInfo>;
 
     using ParserFn = message::MessageVariantIN (*)(const nlohmann::json&);
 
