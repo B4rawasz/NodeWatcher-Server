@@ -4,6 +4,7 @@
 #include <fstream>
 #include <json.hpp>
 #include <set>
+#include <vector>
 
 CPUInfo::CPUInfo(EventBus& eventBus, std::chrono::milliseconds period)
     : eventBus_(eventBus), period_(period) {
@@ -117,4 +118,46 @@ double CPUInfo::getCpuUsage() {
         return 0.0;
 
     return 100.0 - cpu[0].idle - cpu[0].iowait;
+}
+
+std::vector<double> CPUInfo::getPerCoreUsage() {
+    size_t count = 0;
+    sg_cpu_stats* cpu = sg_get_cpu_stats(&count);
+    std::vector<double> usages;
+
+    if (!cpu || count == 0)
+        return usages;
+
+    for (size_t i = 1; i < count; ++i) {
+        double usage = 100.0 - cpu[i].idle - cpu[i].iowait;
+        usages.push_back(usage);
+    }
+
+    return usages;
+}
+
+int CPUInfo::getCPUFrequency() {
+    long long sum = 0;
+    int count = 0;
+
+    for (int cpu = 0;; ++cpu) {
+        std::ifstream f("/sys/devices/system/cpu/cpu" + std::to_string(cpu) +
+                        "/cpufreq/scaling_cur_freq");
+
+        if (!f.is_open())
+            break;
+
+        long khz = 0;
+        f >> khz;
+
+        if (khz > 0) {
+            sum += khz;
+            ++count;
+        }
+    }
+
+    if (count == 0)
+        return 0;
+
+    return static_cast<int>(sum / count);
 }
