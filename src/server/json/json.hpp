@@ -108,13 +108,13 @@ namespace message {
     struct CpuInfoStatic : public Message {
         std::string cpu_model;
         std::string cpu_architecture;
-        std::string cpu_max_frequency;
+        int cpu_max_frequency;
         int cpu_cores;
         int cpu_threads;
         CpuInfoStatic() = default;
         CpuInfoStatic(const std::string& cpu_model,
                       const std::string& cpu_architecture,
-                      const std::string& cpu_max_frequency,
+                      int cpu_max_frequency,
                       int cpu_cores,
                       int cpu_threads)
             : Message(Type::CPU_INFO_STATIC),
@@ -131,6 +131,8 @@ namespace message {
                                        cpu_max_frequency,
                                        cpu_cores,
                                        cpu_threads);
+
+    struct CpuInfo : public Message {};
 }  // namespace message
 
 // Utility functions for parsing and serializing messages

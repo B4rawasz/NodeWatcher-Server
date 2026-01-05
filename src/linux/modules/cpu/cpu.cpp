@@ -50,18 +50,14 @@ void CPUInfo::getCPUArchitecture() {
 
 void CPUInfo::getCPUMaxFrequency() {
     std::ifstream file("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
-    long freq_khz = 0;
+    int freq = 0;
 
-    if (!(file >> freq_khz) || freq_khz <= 0) {
-        cpu_max_frequency_ = "0.000";
+    if (!(file >> freq) || freq <= 0) {
+        cpu_max_frequency_ = 0;
         return;
     }
 
-    double freq_mhz = freq_khz / 1000.0;
-
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(3) << freq_mhz;
-    cpu_max_frequency_ = oss.str();
+    cpu_max_frequency_ = freq;
 }
 
 void CPUInfo::getCPUCores() {

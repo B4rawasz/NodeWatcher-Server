@@ -21,12 +21,14 @@ private:
     void getCPUCores();
     void getCPUThreads();
 
+    // Dynamic system information retrieval methods
+
     EventBus& eventBus_;
     std::chrono::milliseconds period_;
 
     std::string cpu_model_;
     std::string cpu_architecture_;
-    std::string cpu_max_frequency_;
+    int cpu_max_frequency_;
     int cpu_cores_;
     int cpu_threads_;
 };
