@@ -22,6 +22,7 @@ private:
     void getCPUThreads();
 
     // Dynamic system information retrieval methods
+    void getCPULoadAvg(double& load1, double& load5, double& load15);
 
     EventBus& eventBus_;
     std::chrono::milliseconds period_;

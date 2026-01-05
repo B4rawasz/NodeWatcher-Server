@@ -93,3 +93,17 @@ void CPUInfo::getCPUCores() {
 void CPUInfo::getCPUThreads() {
     cpu_threads_ = sysconf(_SC_NPROCESSORS_ONLN);
 }
+
+void CPUInfo::getCPULoadAvg(double& load1, double& load5, double& load15) {
+    double load[3];
+    if (getloadavg(load, 3) != 3) {
+        load1 = 0.0;
+        load5 = 0.0;
+        load15 = 0.0;
+        return;
+    }
+
+    load1 = load[0];
+    load5 = load[1];
+    load15 = load[2];
+}
