@@ -68,5 +68,5 @@ void CPUInfo::getCPUCores() {
 }
 
 void CPUInfo::getCPUThreads() {
-    // Implementation to retrieve number of CPU threads
+    cpu_threads_ = sysconf(_SC_NPROCESSORS_ONLN);
 }
