@@ -4,9 +4,12 @@
 #include <server.h>
 #include <sys/stat.h>
 #include <atomic>
+#include <chrono>
 #include <csignal>
 #include <fstream>
 #include <paths.hpp>
+#include "scheduler.h"
+#include "system.h"
 
 std::atomic<bool> running{true};       // Main loop control
 std::atomic<bool> reload_keys{false};  // Flag to trigger keys reload
@@ -40,6 +43,7 @@ void daemon() {
     }
 
     KeyStore keystore;  // Load API keys
+    EventBus eventBus;
 
     // Initialize server with SSL options
     uWS::SocketContextOptions sslOptions = {
@@ -48,8 +52,25 @@ void daemon() {
         .cert_file_name = "../../test/ssl/certs/server.crt",
     };
 
-    Server server(sslOptions, keystore);
+    Server server(sslOptions, keystore, eventBus);
+
+    // Initialize modules
+    SystemInfo sysInfo(eventBus, std::chrono::seconds(1));
+
+    // Initialize scheduler for light tasks
+    Scheduler scheduler;
+    scheduler.add(&sysInfo);
+
+    // Add static resources
+    server.addStaticResource(&sysInfo);
+
+    // Run server
     server.run(9001);
+
+    // Start scheduler
+    scheduler.start();
+
+    // Start heavy tasks
 
     while (running) {
         // Sleep for a short duration to avoid busy waiting

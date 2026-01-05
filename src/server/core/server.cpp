@@ -3,11 +3,20 @@
 #include "auth.h"
 #include "json.hpp"
 
-Server::Server(uWS::SocketContextOptions sslOptions, KeyStore& keystore)
-    : sslOptions_(sslOptions), keystore_(keystore) {}
+Server::Server(uWS::SocketContextOptions sslOptions,
+               KeyStore& keystore,
+               EventBus& eventBus)
+    : sslOptions_(sslOptions), keystore_(keystore), eventBus_(eventBus) {
+    eventBus_.subscribe(
+        [&](const message::MessageVariantOUT& msg) { this->broadcast(msg); });
+}
 
 Server::~Server() {
     stop();
+}
+
+void Server::addStaticResource(IStaticResource* resource) {
+    staticResources_.push_back(resource);
 }
 
 void Server::run(int port) {
@@ -44,10 +53,10 @@ void Server::stop() {
     running_.store(false);
 }
 
-void Server::broadcast(std::string msg) {
+void Server::broadcast(const message::MessageVariantOUT& msg) {
     {
         std::lock_guard lk(queueMutex_);
-        sendQueue_.push(std::move(msg));
+        sendQueue_.push(msg);
     }
 
     uWS::Loop* loop = loop_.load();
@@ -110,7 +119,7 @@ void Server::flushQueue() {
         std::abort();
     }
 
-    std::queue<std::string> local;
+    std::queue<message::MessageVariantOUT> local;
 
     {
         std::lock_guard lk(queueMutex_);
@@ -118,9 +127,9 @@ void Server::flushQueue() {
     }
 
     while (!local.empty()) {
-        const std::string& msg = local.front();
+        const message::MessageVariantOUT& msg = local.front();
 
-        app_->publish("broadcast", msg, uWS::OpCode::TEXT);
+        app_->publish("info", message::serializeMessage(msg), uWS::OpCode::TEXT);
 
         local.pop();
     }
@@ -185,4 +194,10 @@ void Server::sendFatalFailure(uWS::WebSocket<true, true, PerSocketData>* ws,
                               const message::MessageVariantOUT& error) {
     sendJson(ws, error);
     uWS::Loop::get()->defer([ws]() { ws->close(); });
+}
+
+void Server::sendStaticResource(uWS::WebSocket<true, true, PerSocketData>* ws) {
+    for (auto* resource : staticResources_) {
+        sendJson(ws, resource->getStaticData());
+    }
 }

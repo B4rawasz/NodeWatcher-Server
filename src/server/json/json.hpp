@@ -2,8 +2,10 @@
 #define JSON_H
 
 #include <nlohmann/json.hpp>
+#include <string>
 #include <variant>
 
+// Message definitions
 namespace message {
     enum class Type {
         UNKNOWN = -1,
@@ -11,6 +13,8 @@ namespace message {
         AUTH_CHALLENGE = 1,
         AUTH_RESPONSE = 2,
         AUTH_RESULT = 3,
+        SYSTEM_INFO_STATIC = 4,
+        SYSTEM_INFO = 5,
     };
 
     NLOHMANN_JSON_SERIALIZE_ENUM(Type,
@@ -20,6 +24,8 @@ namespace message {
                                      {Type::AUTH_CHALLENGE, "AUTH_CHALLENGE"},
                                      {Type::AUTH_RESPONSE, "AUTH_RESPONSE"},
                                      {Type::AUTH_RESULT, "AUTH_RESULT"},
+                                     {Type::SYSTEM_INFO_STATIC, "SYSTEM_INFO_STATIC"},
+                                     {Type::SYSTEM_INFO, "SYSTEM_INFO"},
                                  })
 
     struct Message {
@@ -61,10 +67,56 @@ namespace message {
     };
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(AuthResult, type, success, reason);
 
-    using MessageVariantIN = std::variant<Error, AuthResponse>;
-    using MessageVariantOUT = std::variant<Error, AuthChallenge, AuthResult>;
+    struct SystemInfoStatic : public Message {
+        std::string hostname;
+        std::string system_name;
+        std::string version_id;
+        std::string kernel_version;
+        std::string timezone;
+        SystemInfoStatic() = default;
+        SystemInfoStatic(const std::string& hostname,
+                         const std::string& system_name,
+                         const std::string& version_id,
+                         const std::string& kernel_version,
+                         const std::string& timezone)
+            : Message(Type::SYSTEM_INFO_STATIC),
+              hostname(hostname),
+              system_name(system_name),
+              version_id(version_id),
+              kernel_version(kernel_version),
+              timezone(timezone) {}
+    };
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(SystemInfoStatic,
+                                       type,
+                                       hostname,
+                                       system_name,
+                                       version_id,
+                                       kernel_version,
+                                       timezone);
 
-    using MessageVariant = std::variant<Error, AuthChallenge, AuthResponse, AuthResult>;
+    struct SystemInfo : public Message {
+        std::string uptime;
+        std::string local_time;
+        SystemInfo() = default;
+        SystemInfo(const std::string& uptime, const std::string& local_time)
+            : Message(Type::SYSTEM_INFO), uptime(uptime), local_time(local_time) {}
+    };
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(SystemInfo, type, uptime, local_time);
+}  // namespace message
+
+// Utility functions for parsing and serializing messages
+namespace message {
+
+    using MessageVariantIN = std::variant<Error, AuthResponse>;
+    using MessageVariantOUT =
+        std::variant<Error, AuthChallenge, AuthResult, SystemInfoStatic, SystemInfo>;
+
+    using MessageVariant = std::variant<Error,
+                                        AuthChallenge,
+                                        AuthResponse,
+                                        AuthResult,
+                                        SystemInfoStatic,
+                                        SystemInfo>;
 
     using ParserFn = message::MessageVariantIN (*)(const nlohmann::json&);
 

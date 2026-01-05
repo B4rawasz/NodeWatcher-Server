@@ -40,7 +40,10 @@ void Server::handle(uWS::WebSocket<true, true, PerSocketData>* ws,
     if (hmac == expectedHmac) {
         // Authentication successful
         psd->authenticated = true;
+        psd->user = user;
         sendJson(ws, message::AuthResult{true, "Authentication successful"});
+        sendStaticResource(ws);
+        ws->subscribe("info");
     } else {
         // Authentication failed
         sendFatalFailure(ws, message::AuthResult{false, "Authentication failed"});
