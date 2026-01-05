@@ -2,10 +2,10 @@
 #define SYSTEM_H
 
 #include <event_bus.h>
+#include <light_module.h>
 #include <static_resource.h>
 #include <json.hpp>
 #include <string>
-#include "light_module.h"
 
 class SystemInfo : public IStaticResource, public ILightModule {
 public:
