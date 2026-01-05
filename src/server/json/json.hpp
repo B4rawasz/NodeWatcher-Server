@@ -132,7 +132,36 @@ namespace message {
                                        cpu_cores,
                                        cpu_threads);
 
-    struct CpuInfo : public Message {};
+    struct CpuInfo : public Message {
+        double cpu_load_avg_1min;
+        double cpu_load_avg_5min;
+        double cpu_load_avg_15min;
+        double cpu_usage;
+        std::vector<double> per_core_usage;
+        int cpu_frequency;
+        CpuInfo() = default;
+        CpuInfo(double cpu_load_avg_1min,
+                double cpu_load_avg_5min,
+                double cpu_load_avg_15min,
+                double cpu_usage,
+                const std::vector<double>& per_core_usage,
+                int cpu_frequency)
+            : Message(Type::SYSTEM_INFO),
+              cpu_load_avg_1min(cpu_load_avg_1min),
+              cpu_load_avg_5min(cpu_load_avg_5min),
+              cpu_load_avg_15min(cpu_load_avg_15min),
+              cpu_usage(cpu_usage),
+              per_core_usage(per_core_usage),
+              cpu_frequency(cpu_frequency) {}
+    };
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CpuInfo,
+                                       type,
+                                       cpu_load_avg_1min,
+                                       cpu_load_avg_5min,
+                                       cpu_load_avg_15min,
+                                       cpu_usage,
+                                       per_core_usage,
+                                       cpu_frequency);
 }  // namespace message
 
 // Utility functions for parsing and serializing messages
@@ -144,7 +173,8 @@ namespace message {
                                            AuthResult,
                                            SystemInfoStatic,
                                            SystemInfo,
-                                           CpuInfoStatic>;
+                                           CpuInfoStatic,
+                                           CpuInfo>;
 
     using MessageVariant = std::variant<Error,
                                         AuthChallenge,
@@ -152,7 +182,8 @@ namespace message {
                                         AuthResult,
                                         SystemInfoStatic,
                                         SystemInfo,
-                                        CpuInfoStatic>;
+                                        CpuInfoStatic,
+                                        CpuInfo>;
 
     using ParserFn = message::MessageVariantIN (*)(const nlohmann::json&);
 

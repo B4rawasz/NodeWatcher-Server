@@ -22,7 +22,16 @@ message::MessageVariantOUT CPUInfo::getStaticData() {
 }
 
 void CPUInfo::collect() {
-    // Implementation for collecting dynamic CPU data
+    message::CpuInfo cpu_info;
+    double load1, load5, load15;
+    getCPULoadAvg(load1, load5, load15);
+    cpu_info.cpu_load_avg_1min = load1;
+    cpu_info.cpu_load_avg_5min = load5;
+    cpu_info.cpu_load_avg_15min = load15;
+    cpu_info.cpu_usage = getCpuUsage();
+    cpu_info.per_core_usage = getPerCoreUsage();
+    cpu_info.cpu_frequency = getCPUFrequency();
+    eventBus_.publish(cpu_info);
 }
 
 std::chrono::milliseconds CPUInfo::period() {
