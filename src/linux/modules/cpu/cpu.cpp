@@ -2,6 +2,7 @@
 #include <sys/utsname.h>
 #include <fstream>
 #include <json.hpp>
+#include <set>
 
 CPUInfo::CPUInfo(EventBus& eventBus, std::chrono::milliseconds period)
     : eventBus_(eventBus), period_(period) {
@@ -64,7 +65,33 @@ void CPUInfo::getCPUMaxFrequency() {
 }
 
 void CPUInfo::getCPUCores() {
-    // Implementation to retrieve number of CPU cores
+    std::ifstream file("/proc/cpuinfo");
+    std::set<std::string> cores;
+
+    std::string line;
+    std::string physId, coreId;
+
+    while (std::getline(file, line)) {
+        if (line.empty()) {
+            // koniec bloku jednego procesora
+            if (!physId.empty() && !coreId.empty())
+                cores.insert(physId + ":" + coreId);
+
+            physId.clear();
+            coreId.clear();
+            continue;
+        }
+
+        if (line.rfind("physical id", 0) == 0)
+            physId = line.substr(line.find(':') + 1);
+        else if (line.rfind("core id", 0) == 0)
+            coreId = line.substr(line.find(':') + 1);
+    }
+
+    if (!physId.empty() && !coreId.empty())
+        cores.insert(physId + ":" + coreId);
+
+    cpu_cores_ = cores.empty() ? -1 : static_cast<int>(cores.size());
 }
 
 void CPUInfo::getCPUThreads() {
