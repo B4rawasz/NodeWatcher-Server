@@ -8,6 +8,7 @@
 #include <csignal>
 #include <fstream>
 #include <paths.hpp>
+#include "cpu.h"
 #include "scheduler.h"
 #include "system.h"
 
@@ -56,15 +57,18 @@ void daemon() {
 
     // Initialize modules
     SystemInfo sysInfo(eventBus, std::chrono::seconds(1));
+    CPUInfo cpuInfo(eventBus, std::chrono::seconds(1));
 
     // Initialize scheduler for light tasks
     Scheduler scheduler;
     scheduler.add(&sysInfo);
+    scheduler.add(&cpuInfo);
 
     // Add static resources
     server.addStaticResource(&sysInfo);
+    server.addStaticResource(&cpuInfo);
 
-    // Run server
+    // Run servers
     server.run(9001);
 
     // Start scheduler
