@@ -1,5 +1,6 @@
 #include <cpu.h>
-#include "json.hpp"
+#include <fstream>
+#include <json.hpp>
 
 CPUInfo::CPUInfo(EventBus& eventBus, std::chrono::milliseconds period)
     : eventBus_(eventBus), period_(period) {
@@ -25,7 +26,16 @@ std::chrono::milliseconds CPUInfo::period() {
 }
 
 void CPUInfo::getCPUModel() {
-    // Implementation to retrieve CPU model
+    std::ifstream file("/proc/cpuinfo");
+    std::string line;
+
+    cpu_model_ = "Unknown";
+
+    while (std::getline(file, line)) {
+        if (line.rfind("model name", 0) == 0) {
+            cpu_model_ = line.substr(line.find(':') + 2);
+        }
+    }
 }
 
 void CPUInfo::getCPUArchitecture() {
