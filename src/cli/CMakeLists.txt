@@ -11,6 +11,7 @@ target_include_directories(nodewatcher_cli PUBLIC
 target_link_libraries(nodewatcher_cli PUBLIC
     nodewatcher_linux
     nodewatcher_server
+    nodewatcher_events
 )
 
 
