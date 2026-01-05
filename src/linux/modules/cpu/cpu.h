@@ -23,6 +23,7 @@ private:
 
     // Dynamic system information retrieval methods
     void getCPULoadAvg(double& load1, double& load5, double& load15);
+    double getCpuUsage();
 
     EventBus& eventBus_;
     std::chrono::milliseconds period_;

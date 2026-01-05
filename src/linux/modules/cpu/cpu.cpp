@@ -1,4 +1,5 @@
 #include <cpu.h>
+#include <statgrab.h>
 #include <sys/utsname.h>
 #include <fstream>
 #include <json.hpp>
@@ -106,4 +107,14 @@ void CPUInfo::getCPULoadAvg(double& load1, double& load5, double& load15) {
     load1 = load[0];
     load5 = load[1];
     load15 = load[2];
+}
+
+double CPUInfo::getCpuUsage() {
+    size_t count = 0;
+    sg_cpu_stats* cpu = sg_get_cpu_stats(&count);
+
+    if (!cpu || count == 0)
+        return 0.0;
+
+    return 100.0 - cpu[0].idle - cpu[0].iowait;
 }
