@@ -16,6 +16,7 @@ namespace message {
         SYSTEM_INFO_STATIC = 4,
         SYSTEM_INFO = 5,
         CPU_INFO_STATIC = 6,
+        CPU_INFO = 7,
     };
 
     NLOHMANN_JSON_SERIALIZE_ENUM(Type,
@@ -28,6 +29,7 @@ namespace message {
                                      {Type::SYSTEM_INFO_STATIC, "SYSTEM_INFO_STATIC"},
                                      {Type::SYSTEM_INFO, "SYSTEM_INFO"},
                                      {Type::CPU_INFO_STATIC, "CPU_INFO_STATIC"},
+                                     {Type::CPU_INFO, "CPU_INFO"},
                                  })
 
     struct Message {
@@ -146,7 +148,7 @@ namespace message {
                 double cpu_usage,
                 const std::vector<double>& per_core_usage,
                 int cpu_frequency)
-            : Message(Type::SYSTEM_INFO),
+            : Message(Type::CPU_INFO),
               cpu_load_avg_1min(cpu_load_avg_1min),
               cpu_load_avg_5min(cpu_load_avg_5min),
               cpu_load_avg_15min(cpu_load_avg_15min),
