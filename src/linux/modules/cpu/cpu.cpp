@@ -1,5 +1,4 @@
 #include <cpu.h>
-#include <statgrab.h>
 #include <sys/utsname.h>
 #include <fstream>
 #include <json.hpp>
@@ -115,28 +114,35 @@ void CPUInfo::getCPULoadAvg(double& load1, double& load5, double& load15) {
 }
 
 double CPUInfo::getCpuUsage() {
-    size_t count = 0;
-    sg_cpu_stats* cpu = sg_get_cpu_stats(&count);
-
-    if (!cpu || count == 0)
+    if (!cpu_initialized_) {
+        previous_total_times_ = readCpuTimes();
+        cpu_initialized_ = true;
         return 0.0;
+    }
 
-    return 100.0 - cpu[0].idle - cpu[0].iowait;
+    CpuTimes current_total_times = readCpuTimes();
+    double usage = calcCpuUsage(previous_total_times_, current_total_times);
+    previous_total_times_ = current_total_times;
+    return usage;
 }
 
 std::vector<double> CPUInfo::getPerCoreUsage() {
-    size_t count = 0;
-    sg_cpu_stats* cpu = sg_get_cpu_stats(&count);
-    std::vector<double> usages;
-
-    if (!cpu || count == 0)
-        return usages;
-
-    for (size_t i = 1; i < count; ++i) {
-        double usage = 100.0 - cpu[i].idle - cpu[i].iowait;
-        usages.push_back(usage);
+    if (!per_core_initialized_) {
+        int cpu_count = cpu_cores_ > 0 ? cpu_cores_ : sysconf(_SC_NPROCESSORS_ONLN);
+        previous_per_core_times_.resize(cpu_count);
+        for (int i = 0; i < cpu_count; ++i) {
+            previous_per_core_times_[i] = readCpuTimes(i);
+        }
+        per_core_initialized_ = true;
+        return std::vector<double>(cpu_count, 0.0);
     }
-
+    int cpu_count = previous_per_core_times_.size();
+    std::vector<double> usages(cpu_count);
+    for (int i = 0; i < cpu_count; ++i) {
+        CpuTimes current_times = readCpuTimes(i);
+        usages[i] = calcCpuUsage(previous_per_core_times_[i], current_times);
+        previous_per_core_times_[i] = current_times;
+    }
     return usages;
 }
 
@@ -164,4 +170,32 @@ int CPUInfo::getCPUFrequency() {
         return 0;
 
     return static_cast<int>(sum / count);
+}
+
+CpuTimes CPUInfo::readCpuTimes(int core) {
+    std::ifstream f("/proc/stat");
+    std::string line;
+
+    while (std::getline(f, line)) {
+        if ((core == -1 && line.starts_with("cpu ")) ||
+            (core >= 0 && line.starts_with("cpu" + std::to_string(core)))) {
+            CpuTimes t{};
+            std::stringstream ss(line);
+            std::string cpu;
+            ss >> cpu >> t.user >> t.nice >> t.system >> t.idle >> t.iowait >> t.irq >>
+                t.softirq >> t.steal;
+            return t;
+        }
+    }
+    return {};
+}
+
+double CPUInfo::calcCpuUsage(const CpuTimes& a, const CpuTimes& b) {
+    long long idleA = a.idle + a.iowait;
+    long long idleB = b.idle + b.iowait;
+
+    long long totalA = idleA + a.user + a.nice + a.system + a.irq + a.softirq + a.steal;
+    long long totalB = idleB + b.user + b.nice + b.system + b.irq + b.softirq + b.steal;
+
+    return 100.0 * (1.0 - (double)(idleB - idleA) / (totalB - totalA));
 }

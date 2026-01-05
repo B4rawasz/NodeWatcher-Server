@@ -1,5 +1,3 @@
-find_library(STATGRAB_LIBRARY statgrab REQUIRED)
-
 add_library(nodewatcher_linux STATIC
     files/api_keys.cpp
     modules/static_resource.cpp
@@ -21,5 +19,4 @@ target_link_libraries(nodewatcher_linux PUBLIC
     nodewatcher_messages
     nodewatcher_events
     nlohmann_json::nlohmann_json
-    ${STATGRAB_LIBRARY}
 )
